@@ -1,0 +1,26 @@
+{
+  "1": [
+    {
+      "name": "loki-logservice",
+      "url": "http://loki-logs-api.cocktail-logs.svc.cluster.local:9010/",
+      "enabled": true
+    },
+    {
+      "name": "opensearch-logservice",
+      "url": "http://opensearch.o11y.svc.cluster.local:9200/",
+      "enabled": false
+    }
+  ],
+  "2": [
+    {
+      "name": "loki-logservice",
+      "url": "http://loki-logs-api.cocktail-logs.svc.cluster.local:9010/",
+      "enabled": false
+    },
+    {
+      "name": "opensearch-logservice",
+      "url": "http://opensearch.o11y.svc.cluster.local:9200/",
+      "enabled": true
+    }
+  ]
+}
