@@ -23,13 +23,13 @@ func main() {
 
 	fmt.Println("디렉토리 경로 : " + dir)
 
-	filePath := "/var/conf/*"
+	filePath := "/Goproxy/var/conf/*"
 
 	// JSON 파일 읽기
 	data, err := os.ReadFile(filePath)
-	if err != nil {
-		log.Fatalf("Failed file: %v", err)
-	}
+	// if err != nil {
+	// 	log.Fatalf("Failed file: %v", err)
+	// }
 
 	var accounts map[string][]AccountInfo
 	if err := json.Unmarshal(data, &accounts); err != nil {
