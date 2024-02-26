@@ -14,8 +14,11 @@ type AccountInfo struct {
 }
 
 func main() {
+	// JSON 파일 경로
+	filePath := "/var/config/config.json"
+
 	// JSON 파일 읽기
-	data, err := ioutil.ReadFile("config.json")
+	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		log.Fatalf("Failed to read file: %v", err)
 	}
