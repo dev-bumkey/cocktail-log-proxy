@@ -15,6 +15,14 @@ type AccountInfo struct {
 
 func main() {
 	// JSON 파일 경로
+
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("디렉토리 경로 : " + dir)
+
 	filePath := "./config.json"
 
 	// JSON 파일 읽기
