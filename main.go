@@ -20,7 +20,7 @@ func main() {
 	// JSON 파일 읽기
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		log.Fatalf("Failed to read file: %v", err)
+		log.Fatalf("Failed file: %v", err)
 	}
 
 	var accounts map[string][]AccountInfo
