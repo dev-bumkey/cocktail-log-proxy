@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 )
 
 type AccountInfo struct {
@@ -15,10 +15,10 @@ type AccountInfo struct {
 
 func main() {
 	// JSON 파일 경로
-	filePath := "config.json"
+	filePath := "./config.json"
 
 	// JSON 파일 읽기
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		log.Fatalf("Failed file: %v", err)
 	}
