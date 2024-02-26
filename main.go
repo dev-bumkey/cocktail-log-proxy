@@ -15,7 +15,7 @@ type AccountInfo struct {
 
 func main() {
 	// JSON 파일 경로
-	filePath := "var/conf/config.json"
+	filePath := "/var/conf/*"
 
 	// JSON 파일 읽기
 	data, err := ioutil.ReadFile(filePath)
