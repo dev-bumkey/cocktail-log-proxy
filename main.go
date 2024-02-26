@@ -24,7 +24,7 @@ func main() {
 	fmt.Println("디렉토리 경로 : " + dir)
 
 	// /Goproxy/var/conf/config.json
-	filePath := "config.json"
+	filePath := "/Goproxy/var/conf/config.json"
 
 	data, err := os.ReadFile(filePath)
 	if err != nil {
