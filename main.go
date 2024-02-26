@@ -23,7 +23,7 @@ func main() {
 
 	fmt.Println("디렉토리 경로 : " + dir)
 
-	filePath := "/Goproxy/var/conf/*"
+	filePath := "/Goproxy/var/conf/config.json"
 
 	// JSON 파일 읽기
 	data, err := os.ReadFile(filePath)
