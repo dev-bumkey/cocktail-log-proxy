@@ -23,7 +23,7 @@ func main() {
 
 	fmt.Println("디렉토리 경로 : " + dir)
 
-	filePath := "./config.json"
+	filePath := "/var/conf/*"
 
 	// JSON 파일 읽기
 	data, err := os.ReadFile(filePath)
