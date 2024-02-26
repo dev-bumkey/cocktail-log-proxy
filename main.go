@@ -23,19 +23,18 @@ func main() {
 
 	fmt.Println("디렉토리 경로 : " + dir)
 
-	filePath := "/Goproxy/var/conf/config.json"
+	// /Goproxy/var/conf/config.json
+	filePath := "config.json"
 
-	// JSON 파일 읽기
 	data, err := os.ReadFile(filePath)
-	// if err != nil {
-	// 	log.Fatalf("Failed file: %v", err)
-	// }
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	var accounts map[string][]AccountInfo
 	if err := json.Unmarshal(data, &accounts); err != nil {
 		log.Fatalf("Failed to unmarshal JSON: %v", err)
 	}
-
 	// 각 계정에 대한 정보 확인
 	for accountId, accountInfo := range accounts {
 		fmt.Printf("Account ID: %s\n", accountId)
