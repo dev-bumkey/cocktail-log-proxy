@@ -26,7 +26,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filepath := "config.json"
+	filepath := "/var/conf/config.json"
 	// Get enabled URLs based on Account-Seq
 	enabledURLs, err := util.GetEnabledURLs(filepath, seq)
 	if err != nil {
