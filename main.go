@@ -82,12 +82,12 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 func main() {
 	// Create a new HTTP server with the handleRequest function as the handler
 	server := http.Server{
-		Addr:    ":8080",
+		Addr:    ":9999",
 		Handler: http.HandlerFunc(handleRequest),
 	}
 
 	// Start the server and log any errors
-	log.Println("Starting proxy server on :8080")
+	log.Println("Starting proxy server on :9999")
 	err := server.ListenAndServe()
 	if err != nil {
 		log.Fatal("Error starting proxy server: ", err)
