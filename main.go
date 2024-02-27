@@ -44,8 +44,9 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 		// Add RawQuery from the original request URL
 		// 리팩토링 해야함
+		fmt.Println("r.URL.RawQuery:", r.URL.RawQuery)
 		if r.URL.RawQuery != "/" {
-			targetURL += r.URL.RawQuery
+			targetURL += "?" + r.URL.RawQuery
 		}
 		// if r.URL.Path != "" {
 		// 	targetURL += r.URL.Path
