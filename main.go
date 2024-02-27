@@ -36,12 +36,14 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 	var targetURL string
 	if len(enabledURLs) > 0 {
+		// 첫번째 객체만 반환 => 추후 바꿔야함
 		targetURL = enabledURLs[0]
 
 		// Add Path from the original request URL
 		targetURL += r.URL.Path
 
 		// Add RawQuery from the original request URL
+		// 리팩토링 해야함
 		if r.URL.RawQuery != "/" {
 			targetURL += "?" + r.URL.RawQuery
 		}
@@ -53,7 +55,11 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(r.URL, r.Method, r.Body, "target")
+	// Logging request message
+	fmt.Println("Request targetURL:", targetURL)
+	fmt.Println("Request URL:", r.URL)
+	fmt.Println("Request URL.path:", r.URL.Path)
+
 	proxyReq, err := http.NewRequest(r.Method, targetURL, r.Body)
 	if err != nil {
 		http.Error(w, "Error creating proxy request", http.StatusInternalServerError)
@@ -70,12 +76,18 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Send the proxy request using the custom transport
 	resp, err := customTransport.RoundTrip(proxyReq)
 	if err != nil {
-		fmt.Println("err: ", err.Error())
+		fmt.Println("Error sending proxy request:", err.Error())
 		http.Error(w, "Error sending proxy request", http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
+	// Logging response status code
+	fmt.Println("Response Status Code:", resp.StatusCode)
+	fmt.Println("Response Header:", resp.Header)
+	fmt.Println("Response Body:", resp.Body)
+
+	fmt.Println("----------------------")
 	// Copy the headers from the proxy response to the original response
 	for name, values := range resp.Header {
 		for _, value := range values {
