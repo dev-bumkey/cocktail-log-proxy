@@ -38,8 +38,12 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	if len(enabledURLs) > 0 {
 		targetURL = enabledURLs[0]
 
-		if r.URL.Path != "/" {
-			targetURL += r.URL.Path
+		// Add Path from the original request URL
+		targetURL += r.URL.Path
+
+		// Add RawQuery from the original request URL
+		if r.URL.RawQuery != "/" {
+			targetURL += "?" + r.URL.RawQuery
 		}
 		// if r.URL.Path != "" {
 		// 	targetURL += r.URL.Path
