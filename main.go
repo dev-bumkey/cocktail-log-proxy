@@ -26,7 +26,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filepath := "/var/conf/config.json"
+	filepath := "config.json"
 	// Get enabled URLs based on Account-Seq
 	enabledURLs, err := util.GetEnabledURLs(filepath, seq)
 	if err != nil {
@@ -38,13 +38,12 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	if len(enabledURLs) > 0 {
 		targetURL = enabledURLs[0]
 
-		// Add Path from the original request URL
-		targetURL += r.URL.Path
-
-		// Add RawQuery from the original request URL
-		if r.URL.RawQuery != "" {
-			targetURL += "?" + r.URL.RawQuery
+		if r.URL.Path != "/" {
+			targetURL += r.URL.Path
 		}
+		// if r.URL.Path != "" {
+		// 	targetURL += r.URL.Path
+		// }
 	} else {
 		http.Error(w, "No enabled URLs found for the given Account-Seq", http.StatusInternalServerError)
 		return
