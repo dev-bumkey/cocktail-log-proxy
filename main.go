@@ -32,6 +32,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("user-id")
 	userRole := r.Header.Get("user-role")
 
+	fmt.Println("accountSeq: ", accountSeq, "userId: ", userID, "userRole: ", userRole)
+
 	if userID == "" || userRole == "" || accountSeq == "" {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 	}
@@ -100,6 +102,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Calculate elapsed time
 	elapsed := time.Since(startTime)
 
+	fmt.Println("----------------------")
 	// Log response details similar to nginx log_format
 	log.Printf(
 		"%s - - [%s] \"%s\" %d %d \"%s\" \"%s\" \"%s\" %.3fms\n",
@@ -113,8 +116,6 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		r.Header.Get("X-Forwarded-For"),
 		float64(elapsed.Nanoseconds())/1000000.0,
 	)
-
-	fmt.Println("----------------------")
 
 	// Copy the headers from the proxy response to the original response
 	for name, values := range resp.Header {
