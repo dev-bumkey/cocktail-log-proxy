@@ -2,7 +2,7 @@
   "1": [
     {
       "name": "loki-logservice",
-      "url": "http://localhost:9010",
+      "url": "http://localhost:9010/log-api/v6/audit/info?start=1709098380&end=1709099280&cluster-ids=gpu-cluster&limit=5000&direction=backward&search=&step=1m&time_zone=Asia%2FSeoul&format=combine_all&filter_expr=&with_value=true",
       "enabled": true
     },
     {
@@ -19,7 +19,7 @@
     },
     {
       "name": "opensearch-logservice",
-      "url": "http://opensearch.o11y.svc.cluster.local:9200",
+      "url": "http://localhost:8081/rolldice",
       "enabled": true
     }
   ]
