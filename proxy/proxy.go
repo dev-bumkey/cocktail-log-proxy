@@ -55,10 +55,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, configFile string) {
 	userID := r.Header.Get("user-id")
 	userRole := r.Header.Get("user-role")
 
-	fmt.Println("accountSeq: ", accountSeq, "userId: ", userID, "userRole: ", userRole)
-	fmt.Println("----------------------")
-
-	if accountSeq == "" {
+	if userID == "" || userRole == "" || accountSeq == "" {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 	}
 
@@ -94,6 +91,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, configFile string) {
 		return
 	}
 
+	// server 켜있는지 확인
 	proxyReq, err := http.NewRequest(r.Method, targetURL, r.Body)
 	if err != nil {
 		http.Error(w, "Error creating proxy request", http.StatusInternalServerError)
@@ -117,14 +115,12 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, configFile string) {
 	elapsed := time.Since(startTime)
 
 	log.Printf(
-		"%s - - [%s] \"%s\" %d %d \"%s\" \"%s\" \"%s\" %.3fms\n",
+		"%s %s \"%s\" %d %d \"%s\" %.3fms\n",
 		r.RemoteAddr,
 		targetURL,
 		r.Method+" "+r.URL.Path+" "+r.Proto,
 		resp.StatusCode,
 		resp.ContentLength,
-		r.Referer(),
-		r.UserAgent(),
 		r.Header.Get("X-Forwarded-For"),
 		float64(elapsed.Microseconds())/1000000.0,
 	)
