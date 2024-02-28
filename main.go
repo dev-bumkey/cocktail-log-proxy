@@ -33,10 +33,11 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	userRole := r.Header.Get("user-role")
 
 	fmt.Println("accountSeq: ", accountSeq, "userId: ", userID, "userRole: ", userRole)
+	fmt.Println("----------------------")
 
-	if userID == "" || userRole == "" || accountSeq == "" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-	}
+	// if userID == "" || userRole == "" || accountSeq == "" {
+	// 	http.Error(w, "unauthorized", http.StatusUnauthorized)
+	// }
 
 	seq, err := strconv.Atoi(accountSeq)
 	if err != nil {
@@ -74,8 +75,6 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Request targetURL:", targetURL)
 	fmt.Println("Request URL:", r.URL)
 
-	fmt.Println("----------------------")
-
 	proxyReq, err := http.NewRequest(r.Method, targetURL, r.Body)
 	if err != nil {
 		http.Error(w, "Error creating proxy request", http.StatusInternalServerError)
@@ -102,7 +101,6 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Calculate elapsed time
 	elapsed := time.Since(startTime)
 
-	fmt.Println("----------------------")
 	// Log response details similar to nginx log_format
 	log.Printf(
 		"%s - - [%s] \"%s\" %d %d \"%s\" \"%s\" \"%s\" %.3fms\n",
