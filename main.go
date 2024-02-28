@@ -29,7 +29,12 @@ func init() {
 func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// 헤더에서 Account-Seq 추출
 	accountSeq := r.Header.Get("Account-Seq")
-	fmt.Println(r.Header)
+	userID := r.Header.Get("user-id")
+	userRole := r.Header.Get("user-role")
+
+	if userID == "" || userRole == "" || accountSeq == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+	}
 
 	seq, err := strconv.Atoi(accountSeq)
 	if err != nil {
