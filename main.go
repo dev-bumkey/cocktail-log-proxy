@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"Goproxy/util"
 )
@@ -17,9 +18,10 @@ func init() {
 }
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
+	startTime := time.Now()
+
 	// 헤더에서 Account-Seq 추출
 	accountSeq := r.Header.Get("Account-Seq")
-	fmt.Println(r.Header)
 
 	seq, err := strconv.Atoi(accountSeq)
 	if err != nil {
@@ -27,8 +29,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filepath := "/var/conf/config.json"
-	// filepath := "config.json"
+	// filepath := "/var/conf/config.json"
+	filepath := "config.json"
 
 	// Get enabled URLs based on Account-Seq
 	enabledURLs, err := util.GetEnabledURLs(filepath, seq)
@@ -36,7 +38,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error getting enabled URLs", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("enabledURLs", enabledURLs)
+	// fmt.Println("enabledURLs: ", enabledURLs)
 
 	var targetURL string
 	if len(enabledURLs) > 0 {
@@ -59,8 +61,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 	// Logging request message
 	fmt.Println("Request targetURL:", targetURL)
-	fmt.Println("Request URL:", r.URL)
-	fmt.Println("Request Header:", r.Header)
+	// fmt.Println("Request Header:", r.Header)
 
 	fmt.Println("----------------------")
 
@@ -87,11 +88,28 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	// Logging response status code
-	fmt.Println("Response Status Code:", resp.StatusCode)
-	fmt.Println("Response Header:", resp.Header)
-	fmt.Println("Response Body:", resp.Body)
+	// fmt.Println("Response Status Code:", resp.StatusCode)
+	// fmt.Println("Response Header:", resp.Header)
+
+	// Calculate elapsed time
+	elapsed := time.Since(startTime)
+
+	// Log response details similar to nginx log_format
+	log.Printf(
+		"%s - - [%s] \"%s\" %d %d \"%s\" \"%s\" \"%s\" %.3fms\n",
+		r.RemoteAddr,
+		time.Now().Format("02/Jan/2006:15:04:05 -0700"),
+		r.Method+" "+r.URL.Path+" "+r.Proto,
+		resp.StatusCode,
+		resp.ContentLength,
+		r.Referer(),
+		r.UserAgent(),
+		r.Header.Get("X-Forwarded-For"),
+		float64(elapsed.Nanoseconds())/1000000.0,
+	)
 
 	fmt.Println("----------------------")
+
 	// Copy the headers from the proxy response to the original response
 	for name, values := range resp.Header {
 		for _, value := range values {
@@ -105,6 +123,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Copy the body of the proxy response to the original response
 	io.Copy(w, resp.Body)
 }
+
 func main() {
 	// Create a new HTTP server with the handleRequest function as the handler
 	server := http.Server{
