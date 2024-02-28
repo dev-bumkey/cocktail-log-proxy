@@ -68,8 +68,11 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, configFile string) {
 	configFileMutex.Lock()
 	defer configFileMutex.Unlock()
 
+	// config파일 못불러옴
 	enabledURLs, err := GetEnabledURLs(configFile, seq)
 	if err != nil {
+		fmt.Println(enabledURLs, " enabledURLs ")
+		log.Println("Error getting enabled URLs:", err.Error())
 		http.Error(w, "Error getting enabled URLs", http.StatusInternalServerError)
 		return
 	}
@@ -106,7 +109,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, configFile string) {
 
 	resp, err := customTransport.RoundTrip(proxyReq)
 	if err != nil {
-		fmt.Println("Error sending proxy request:", err.Error())
+		log.Println("Error sending proxy request:", err.Error())
 		http.Error(w, "Error sending proxy request", http.StatusInternalServerError)
 		return
 	}
