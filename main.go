@@ -35,9 +35,9 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("accountSeq: ", accountSeq, "userId: ", userID, "userRole: ", userRole)
 	fmt.Println("----------------------")
 
-	// if userID == "" || userRole == "" || accountSeq == "" {
-	// 	http.Error(w, "unauthorized", http.StatusUnauthorized)
-	// }
+	if accountSeq == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+	}
 
 	seq, err := strconv.Atoi(accountSeq)
 	if err != nil {
@@ -61,7 +61,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		targetURL = enabledURLs[0]
 
 		// Add Path from the original request URL
-		targetURL += r.URL.Path
+		// targetURL += r.URL.Path
 
 		if r.URL.RawQuery != "" {
 			targetURL += "?" + r.URL.RawQuery
@@ -72,7 +72,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Logging request message
-	fmt.Println("Request URL:", r.URL)
+	// fmt.Println("Request URL:", r.URL)
 
 	proxyReq, err := http.NewRequest(r.Method, targetURL, r.Body)
 	if err != nil {
@@ -111,7 +111,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		r.Referer(),
 		r.UserAgent(),
 		r.Header.Get("X-Forwarded-For"),
-		float64(elapsed.Nanoseconds())/1000000.0,
+		float64(elapsed.Microseconds())/1000000.0,
 	)
 
 	// Copy the headers from the proxy response to the original response
