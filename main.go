@@ -19,6 +19,7 @@ func init() {
 func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// 헤더에서 Account-Seq 추출
 	accountSeq := r.Header.Get("Account-Seq")
+	fmt.Println(r.Header)
 
 	seq, err := strconv.Atoi(accountSeq)
 	if err != nil {
@@ -43,9 +44,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		targetURL = enabledURLs[0]
 
 		// Add Path from the original request URL
-		// targetURL += r.URL.Path
+		targetURL += r.URL.Path
 
-		//
 		if r.URL.RawQuery != "" {
 			targetURL += "?" + r.URL.RawQuery
 		}
@@ -60,7 +60,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Logging request message
 	fmt.Println("Request targetURL:", targetURL)
 	fmt.Println("Request URL:", r.URL)
-	fmt.Println("Request URL.path:", r.URL.Path)
+	fmt.Println("Request Header:", r.Header)
 
 	fmt.Println("----------------------")
 
