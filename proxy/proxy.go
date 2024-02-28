@@ -81,11 +81,11 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, configFile string) {
 	if len(enabledURLs) > 0 {
 		targetURL = enabledURLs[0]
 		// Add Path from the original request URL
-		// targetURL += r.URL.Path
+		targetURL += r.URL.Path
 
-		fmt.Println("targetURL:", targetURL)
-		fmt.Println("path:", r.URL.Path)
-		fmt.Println("r.URL.RawQuery:", r.URL.RawQuery)
+		// fmt.Println("targetURL:", targetURL)
+		// fmt.Println("path:", r.URL.Path)
+		// fmt.Println("r.URL.RawQuery:", r.URL.RawQuery)
 		if r.URL.RawQuery != "" {
 			targetURL += "?" + r.URL.RawQuery
 		}
