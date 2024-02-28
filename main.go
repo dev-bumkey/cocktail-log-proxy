@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"Goproxy/util"
@@ -13,15 +14,21 @@ import (
 
 var customTransport = http.DefaultTransport
 
+var configFileMutex sync.Mutex
+
+// var configFile = "/var/conf/config.json"
+var configFile = "config.json"
+
+var startTime = time.Now()
+
 func init() {
 	// Here, you can customize the transport, e.g., set timeouts or enable/disable keep-alive
 }
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
-	startTime := time.Now()
-
 	// 헤더에서 Account-Seq 추출
 	accountSeq := r.Header.Get("Account-Seq")
+	fmt.Println(r.Header)
 
 	seq, err := strconv.Atoi(accountSeq)
 	if err != nil {
@@ -29,16 +36,15 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// filepath := "/var/conf/config.json"
-	filepath := "config.json"
+	configFileMutex.Lock()
+	defer configFileMutex.Unlock()
 
 	// Get enabled URLs based on Account-Seq
-	enabledURLs, err := util.GetEnabledURLs(filepath, seq)
+	enabledURLs, err := util.GetEnabledURLs(configFile, seq)
 	if err != nil {
 		http.Error(w, "Error getting enabled URLs", http.StatusInternalServerError)
 		return
 	}
-	// fmt.Println("enabledURLs: ", enabledURLs)
 
 	var targetURL string
 	if len(enabledURLs) > 0 {
@@ -51,9 +57,6 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		if r.URL.RawQuery != "" {
 			targetURL += "?" + r.URL.RawQuery
 		}
-		// if r.URL.Path != "" {
-		// 	targetURL += r.URL.Path
-		// }
 	} else {
 		http.Error(w, "No enabled URLs found for the given Account-Seq", http.StatusInternalServerError)
 		return
@@ -61,7 +64,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 	// Logging request message
 	fmt.Println("Request targetURL:", targetURL)
-	// fmt.Println("Request Header:", r.Header)
+	fmt.Println("Request URL:", r.URL)
 
 	fmt.Println("----------------------")
 
@@ -88,9 +91,6 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	// Logging response status code
-	// fmt.Println("Response Status Code:", resp.StatusCode)
-	// fmt.Println("Response Header:", resp.Header)
-
 	// Calculate elapsed time
 	elapsed := time.Since(startTime)
 
