@@ -16,8 +16,9 @@ var customTransport = http.DefaultTransport
 
 var configFileMutex sync.Mutex
 
-// var configFile = "/var/conf/config.json"
-var configFile = "config.json"
+var configFile = "/var/conf/config.json"
+
+// var configFile = "config.json"
 
 var startTime = time.Now()
 
