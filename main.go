@@ -26,13 +26,16 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filepath := "/var/conf/config.json"
+	// filepath := "/var/conf/config.json"
+	filepath := "config.json"
+
 	// Get enabled URLs based on Account-Seq
 	enabledURLs, err := util.GetEnabledURLs(filepath, seq)
 	if err != nil {
 		http.Error(w, "Error getting enabled URLs", http.StatusInternalServerError)
 		return
 	}
+	fmt.Println("enabledURLs", enabledURLs)
 
 	var targetURL string
 	if len(enabledURLs) > 0 {
@@ -40,12 +43,10 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		targetURL = enabledURLs[0]
 
 		// Add Path from the original request URL
-		targetURL += r.URL.Path
+		// targetURL += r.URL.Path
 
-		// Add RawQuery from the original request URL
-		// 리팩토링 해야함
-		fmt.Println("r.URL.RawQuery:", r.URL.RawQuery)
-		if r.URL.RawQuery != "/" {
+		//
+		if r.URL.RawQuery != "" {
 			targetURL += "?" + r.URL.RawQuery
 		}
 		// if r.URL.Path != "" {
@@ -60,6 +61,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Request targetURL:", targetURL)
 	fmt.Println("Request URL:", r.URL)
 	fmt.Println("Request URL.path:", r.URL.Path)
+
+	fmt.Println("----------------------")
 
 	proxyReq, err := http.NewRequest(r.Method, targetURL, r.Body)
 	if err != nil {
