@@ -72,7 +72,6 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Logging request message
-	fmt.Println("Request targetURL:", targetURL)
 	fmt.Println("Request URL:", r.URL)
 
 	proxyReq, err := http.NewRequest(r.Method, targetURL, r.Body)
@@ -105,7 +104,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	log.Printf(
 		"%s - - [%s] \"%s\" %d %d \"%s\" \"%s\" \"%s\" %.3fms\n",
 		r.RemoteAddr,
-		time.Now().Format("02/Jan/2006:15:04:05 -0700"),
+		targetURL,
 		r.Method+" "+r.URL.Path+" "+r.Proto,
 		resp.StatusCode,
 		resp.ContentLength,
