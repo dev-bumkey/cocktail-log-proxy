@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -8,18 +9,13 @@ import (
 )
 
 func main() {
-	// configFile := "config.json"
-	configFile := "/var/conf/config.json"
+	// ProxyHandler 함수를 요청 핸들러로 등록
+	http.HandleFunc("/", proxy.ProxyHandler)
 
-	http.HandleFunc(
-		"/", func(w http.ResponseWriter, r *http.Request) {
-			proxy.HandleRequest(w, r, configFile)
-		},
-	)
-
-	log.Println("Starting proxy server on :9999")
+	// 9999 포트에서 서버 시작
+	fmt.Println("Starting proxy server on :9999")
 	err := http.ListenAndServe(":9999", nil)
 	if err != nil {
-		log.Fatal("Error starting proxy server: ", err)
+		log.Fatal("Error starting proxy server:", err)
 	}
 }
