@@ -3,7 +3,6 @@ package proxy
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -15,7 +14,7 @@ import (
 	"Goproxy/config"
 )
 
-type LogServiceResponse struct {
+type ApiResponse struct {
 	Status string       `json:"status"`
 	Code   string       `json:"code"`
 	Result []LogService `json:"result"`
@@ -37,7 +36,7 @@ type LogService struct {
 }
 
 var (
-	logServiceData     LogServiceResponse
+	logServiceData     ApiResponse
 	logServiceDataLock sync.RWMutex
 )
 
@@ -63,8 +62,7 @@ func UpdateLogServiceData(ctx context.Context) {
 }
 
 func updateData() {
-	newData, err := fetchData(config.Data.CocktailApiUrl)
-	fmt.Println("호출됨")
+	newProxyingUrl, err := fetchData(config.Data.CocktailApiUrl)
 	if err != nil {
 		log.Println("Error updating LogService data:", err)
 		return
@@ -72,30 +70,30 @@ func updateData() {
 
 	// Update logServiceData with the new data
 	logServiceDataLock.Lock()
-	logServiceData = newData
+	logServiceData = newProxyingUrl
 	logServiceDataLock.Unlock()
 }
 
 // api-server response url 가져오기
-func fetchData(url string) (LogServiceResponse, error) {
+func fetchData(url string) (ApiResponse, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return LogServiceResponse{}, err
+		return ApiResponse{}, err
 	}
 	defer resp.Body.Close()
 
 	responseBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return LogServiceResponse{}, err
+		return ApiResponse{}, err
 	}
 
-	var jsonResponse LogServiceResponse
-	err = json.Unmarshal(responseBody, &jsonResponse)
+	var apiRes ApiResponse
+	err = json.Unmarshal(responseBody, &apiRes)
 	if err != nil {
-		return LogServiceResponse{}, err
+		return ApiResponse{}, err
 	}
 
-	return jsonResponse, nil
+	return apiRes, nil
 }
 
 // ProxyHandler HTTP 요청을 처리하고 프록시 서버 역할
@@ -121,24 +119,21 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Find activated endpoint for the current account
-	var activatedEndpoint string
+	var activatedEndpointUrl string
 
 	for _, logService := range logServiceData.Result {
 		if logService.AccountSeq == seq && logService.Activated == "Y" {
-			activatedEndpoint = logService.ApiEndpointUrl
+			activatedEndpointUrl = logService.ApiEndpointUrl
 			break
 		}
 	}
 
-	if len(activatedEndpoint) > 0 {
+	if len(activatedEndpointUrl) > 0 {
 		// Add Path from the original request URL
-		activatedEndpoint += r.URL.Path
+		activatedEndpointUrl += r.URL.Path
 
-		fmt.Println("targetURL:", activatedEndpoint)
-		fmt.Println("path:", r.URL.Path)
-		fmt.Println("r.URL.RawQuery:", r.URL.RawQuery)
 		if r.URL.RawQuery != "" {
-			activatedEndpoint += "?" + r.URL.RawQuery
+			activatedEndpointUrl += "?" + r.URL.RawQuery
 		}
 	} else {
 		http.Error(w, "No enabled URLs found for the given Account-Seq", http.StatusInternalServerError)
@@ -146,13 +141,26 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 현재 계정에 대한 활성화된 로그 서비스를 찾을 수 없을때
-	if activatedEndpoint == "" {
+	if activatedEndpointUrl == "" {
 		http.Error(w, "No active log services were found for your current account.", http.StatusNotFound)
 		return
 	}
 
 	// Proxy the request to the activated endpoint
-	resp, err := http.Get(activatedEndpoint)
+	req, err := http.NewRequest(r.Method, activatedEndpointUrl, r.Body)
+	if err != nil {
+		http.Error(w, "Error creating proxy request", http.StatusInternalServerError)
+		return
+	}
+
+	// Set headers
+	req.Header.Set("account-seq", accountSeq)
+	req.Header.Set("user-id", userID)
+	req.Header.Set("user-role", userRole)
+
+	// Send request
+	client := http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Println("Error proxying request:", err)
 		http.Error(w, "Error proxying request", http.StatusInternalServerError)
@@ -176,7 +184,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Log response details
 	// r.RemoteAddr: 요청이 온 클라이언트의 IP 주소와 포트
-	// activatedEndpoint: 프록시된 요청의 대상 엔드포인트
+	// activatedEndpointUrl: 프록시된 요청의 대상 엔드포인트
 	// r.Method r.URL.Path r.Proto: 요청의 HTTP 메소드, URL 경로 및 프로토콜
 	// resp.StatusCode: 응답의 HTTP 상태 코드
 	// resp.ContentLength: 응답 본문의 길이
@@ -186,7 +194,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf(
 		"%s %s \"%s\" %d %d \"%s\"",
 		r.RemoteAddr,
-		activatedEndpoint,
+		activatedEndpointUrl,
 		r.Method+" "+r.URL.Path+" "+r.Proto,
 		resp.StatusCode,
 		resp.ContentLength,
@@ -194,14 +202,6 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 		float64(elapsed.Microseconds())/1000000.0,
 	)
 
-	// Copy response headers
-	for name, values := range resp.Header {
-		for _, value := range values {
-			w.Header().Add(name, value)
-		}
-	}
-
-	w.WriteHeader(resp.StatusCode)
-
+	// w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 }
