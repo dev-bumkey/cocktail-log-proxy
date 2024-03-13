@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,6 +10,13 @@ import (
 )
 
 func main() {
+
+	// 컨택스트 생성
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go proxy.UpdateLogServiceData(ctx)
+
 	// ProxyHandler 함수를 요청 핸들러로 등록
 	http.HandleFunc("/", proxy.ProxyHandler)
 
