@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -44,6 +45,8 @@ var startTime = time.Now()
 
 // 주기적으로 데이터 업데이트
 func UpdateLogServiceData(ctx context.Context) {
+	updateData()
+
 	// 주기 설정
 	ticker := time.NewTicker(config.Data.UpdateCycle)
 	defer ticker.Stop()
@@ -54,19 +57,23 @@ func UpdateLogServiceData(ctx context.Context) {
 			return
 		case <-ticker.C:
 			// api-server 주기적으로 호출
-			newData, err := fetchData(config.Data.CocktailApiUrl)
-			// fmt.Println("호출됨")
-			if err != nil {
-				log.Println("Error updating LogService data:", err)
-				continue
-			}
-
-			// Update logServiceData with the new data
-			logServiceDataLock.Lock()
-			logServiceData = newData
-			logServiceDataLock.Unlock()
+			updateData()
 		}
 	}
+}
+
+func updateData() {
+	newData, err := fetchData(config.Data.CocktailApiUrl)
+	fmt.Println("호출됨")
+	if err != nil {
+		log.Println("Error updating LogService data:", err)
+		return
+	}
+
+	// Update logServiceData with the new data
+	logServiceDataLock.Lock()
+	logServiceData = newData
+	logServiceDataLock.Unlock()
 }
 
 // api-server response url 가져오기
@@ -115,11 +122,27 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Find activated endpoint for the current account
 	var activatedEndpoint string
+
 	for _, logService := range logServiceData.Result {
 		if logService.AccountSeq == seq && logService.Activated == "Y" {
 			activatedEndpoint = logService.ApiEndpointUrl
 			break
 		}
+	}
+
+	if len(activatedEndpoint) > 0 {
+		// Add Path from the original request URL
+		activatedEndpoint += r.URL.Path
+
+		fmt.Println("targetURL:", activatedEndpoint)
+		fmt.Println("path:", r.URL.Path)
+		fmt.Println("r.URL.RawQuery:", r.URL.RawQuery)
+		if r.URL.RawQuery != "" {
+			activatedEndpoint += "?" + r.URL.RawQuery
+		}
+	} else {
+		http.Error(w, "No enabled URLs found for the given Account-Seq", http.StatusInternalServerError)
+		return
 	}
 
 	// 현재 계정에 대한 활성화된 로그 서비스를 찾을 수 없을때
@@ -143,9 +166,6 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 			w.Header().Add(key, value)
 		}
 	}
-
-	// Set response status code
-	w.WriteHeader(resp.StatusCode)
 
 	// Copy response body
 	_, err = io.Copy(w, resp.Body)
@@ -180,4 +200,8 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 			w.Header().Add(name, value)
 		}
 	}
+
+	w.WriteHeader(resp.StatusCode)
+
+	io.Copy(w, resp.Body)
 }
