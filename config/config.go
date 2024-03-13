@@ -15,7 +15,7 @@ type Config struct {
 	CocktailApiUrl string `env:"COCKTAIL_API_SERVER" envDefault:"http://localhost:8080/internal/log/service"`
 
 	// 업데이트 주기
-	UpdateCycle time.Duration `env:"UPDATE_CYCLE" envDefault:"15s"`
+	UpdateCycle time.Duration `env:"UPDATE_CYCLE" envDefault:"15m"`
 }
 
 func init() {

@@ -11,7 +11,9 @@ import (
 	"sync"
 	"time"
 
+	"Goproxy/auth"
 	"Goproxy/config"
+	"Goproxy/logger"
 )
 
 type ApiResponse struct {
@@ -21,17 +23,9 @@ type ApiResponse struct {
 }
 
 type LogService struct {
-	AccountSeq     int    `json:"accountSeq"`
-	LogServiceSeq  int    `json:"logServiceSeq"`
-	LogServiceId   string `json:"logServiceId"`
-	LogServiceType string `json:"logServiceType"`
-	LogServiceName string `json:"logServiceName"`
+	AccountSeq int `json:"accountSeq"`
+	// LogServiceSeq int `json:"logServiceSeq"`
 	ApiEndpointUrl string `json:"apiEndpointUrl"`
-	EndpointType   string `json:"endpointType"`
-	HostIp         string `json:"hostIp"`
-	ClusterSeq     int    `json:"clusterSeq"`
-	ClusterId      string `json:"clusterId"`
-	Namespace      string `json:"namespace"`
 	Activated      string `json:"activated"`
 }
 
@@ -96,25 +90,15 @@ func fetchData(url string) (ApiResponse, error) {
 	return apiRes, nil
 }
 
-// ProxyHandler HTTP 요청을 처리하고 프록시 서버 역할
+// HTTP 요청을 처리하고 프록시 서버 역할
 func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	// Read from the updated logServiceData
 	logServiceDataLock.RLock()
 	defer logServiceDataLock.RUnlock()
 
-	accountSeq := r.Header.Get("account-seq")
-	userID := r.Header.Get("user-id")
-	userRole := r.Header.Get("user-role")
-
-	// Check if required header values are present
-	if userID == "" || userRole == "" || accountSeq == "" {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	seq, err := strconv.Atoi(accountSeq)
+	accountSeq, userID, userRole, err := auth.Authenticate(r)
 	if err != nil {
-		http.Error(w, "Invalid account-Seq header", http.StatusBadRequest)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
@@ -122,31 +106,24 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	var activatedEndpointUrl string
 
 	for _, logService := range logServiceData.Result {
-		if logService.AccountSeq == seq && logService.Activated == "Y" {
+		if logService.AccountSeq == accountSeq && logService.Activated == "Y" {
 			activatedEndpointUrl = logService.ApiEndpointUrl
 			break
 		}
 	}
 
-	if len(activatedEndpointUrl) > 0 {
-		// Add Path from the original request URL
-		activatedEndpointUrl += r.URL.Path
-
-		if r.URL.RawQuery != "" {
-			activatedEndpointUrl += "?" + r.URL.RawQuery
-		}
-	} else {
+	if len(activatedEndpointUrl) == 0 {
 		http.Error(w, "No enabled URLs found for the given Account-Seq", http.StatusInternalServerError)
 		return
 	}
 
-	// 현재 계정에 대한 활성화된 로그 서비스를 찾을 수 없을때
-	if activatedEndpointUrl == "" {
-		http.Error(w, "No active log services were found for your current account.", http.StatusNotFound)
-		return
+	// 요청 URL에 path add
+	activatedEndpointUrl += r.URL.Path
+	if r.URL.RawQuery != "" {
+		activatedEndpointUrl += "?" + r.URL.RawQuery
 	}
 
-	// Proxy the request to the activated endpoint
+	// 활성화된 엔드포인트로 요청 프록시
 	req, err := http.NewRequest(r.Method, activatedEndpointUrl, r.Body)
 	if err != nil {
 		http.Error(w, "Error creating proxy request", http.StatusInternalServerError)
@@ -154,7 +131,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set headers
-	req.Header.Set("account-seq", accountSeq)
+	req.Header.Set("account-seq", strconv.Itoa(accountSeq))
 	req.Header.Set("user-id", userID)
 	req.Header.Set("user-role", userRole)
 
@@ -183,25 +160,5 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Log response details
-	// r.RemoteAddr: 요청이 온 클라이언트의 IP 주소와 포트
-	// activatedEndpointUrl: 프록시된 요청의 대상 엔드포인트
-	// r.Method r.URL.Path r.Proto: 요청의 HTTP 메소드, URL 경로 및 프로토콜
-	// resp.StatusCode: 응답의 HTTP 상태 코드
-	// resp.ContentLength: 응답 본문의 길이
-	// r.Header.Get("X-Forwarded-For"): 요청 헤더의 "X-Forwarded-For"
-	elapsed := time.Since(startTime)
-
-	log.Printf(
-		"%s %s \"%s\" %d %d \"%s\"",
-		r.RemoteAddr,
-		activatedEndpointUrl,
-		r.Method+" "+r.URL.Path+" "+r.Proto,
-		resp.StatusCode,
-		resp.ContentLength,
-		r.Header.Get("X-Forwarded-For"),
-		float64(elapsed.Microseconds())/1000000.0,
-	)
-
-	// w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
+	logger.LogRequest(r, resp)
 }
